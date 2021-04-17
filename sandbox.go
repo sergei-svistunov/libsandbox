@@ -10,13 +10,14 @@ import (
 var SandboxElf = "/usr/bin/sandbox"
 
 type Sandbox struct {
-	path      string
-	files     []file
-	mountDirs []mountDir
-	env       []string
-	noNewNet  bool
-	cgroup    string
-	memLimit  uint64
+	path          string
+	files         []file
+	mountDirs     []mountDir
+	env           []string
+	noNewNet      bool
+	cgroup        string
+	memLimit      uint64
+	saveUsageStat string
 }
 
 type file struct {
@@ -79,6 +80,12 @@ func (s *Sandbox) SetMemLimit(limit uint64) *Sandbox {
 	return s
 }
 
+func (s *Sandbox) SaveUsageStat(filename string) *Sandbox {
+	s.saveUsageStat = filename
+
+	return s
+}
+
 func (s *Sandbox) Command(path string, args ...string) *exec.Cmd {
 	return s.CommandContext(nil, path, args...)
 }
@@ -114,6 +121,10 @@ func (s *Sandbox) CommandContext(ctx context.Context, path string, args ...strin
 
 	if s.memLimit != 0 {
 		execArgs = append(execArgs, "--mem_limit", strconv.FormatUint(s.memLimit, 10))
+	}
+
+	if s.saveUsageStat != "" {
+		execArgs = append(execArgs, "--save_usage_stat", s.saveUsageStat)
 	}
 
 	execArgs = append(execArgs, "--", path)
