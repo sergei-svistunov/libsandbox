@@ -16,6 +16,7 @@ type Sandbox struct {
 	env           []string
 	noNewNet      bool
 	cgroup        string
+	cpuSet        string
 	memLimit      uint64
 	saveUsageStat string
 }
@@ -74,6 +75,12 @@ func (s *Sandbox) SetCGroup(name string) *Sandbox {
 	return s
 }
 
+func (s *Sandbox) SetCpuSet(set string) *Sandbox {
+	s.cpuSet = set
+
+	return s
+}
+
 func (s *Sandbox) SetMemLimit(limit uint64) *Sandbox {
 	s.memLimit = limit
 
@@ -117,6 +124,10 @@ func (s *Sandbox) CommandContext(ctx context.Context, path string, args ...strin
 
 	if s.cgroup != "" {
 		execArgs = append(execArgs, "--cgroup", s.cgroup)
+	}
+
+	if s.cpuSet != "" {
+		execArgs = append(execArgs, "--cpuset", s.cpuSet)
 	}
 
 	if s.memLimit != 0 {
