@@ -2,7 +2,6 @@ package sandbox
 
 import (
 	"context"
-	"log"
 	"os/exec"
 	"strconv"
 )
@@ -19,6 +18,7 @@ type Sandbox struct {
 	cpuSet        string
 	memLimit      uint64
 	saveUsageStat string
+	execDir       string
 }
 
 type file struct {
@@ -93,11 +93,27 @@ func (s *Sandbox) SaveUsageStat(filename string) *Sandbox {
 	return s
 }
 
+func (s *Sandbox) ExecDir(dir string) *Sandbox {
+	s.execDir = dir
+
+	return s
+}
+
 func (s *Sandbox) Command(path string, args ...string) *exec.Cmd {
 	return s.CommandContext(nil, path, args...)
 }
 
 func (s *Sandbox) CommandContext(ctx context.Context, path string, args ...string) *exec.Cmd {
+	execArgs := s.BuildExecArgs(path, args)
+
+	if ctx == nil {
+		return exec.Command(SandboxElf, execArgs...)
+	}
+
+	return exec.CommandContext(ctx, SandboxElf, execArgs...)
+}
+
+func (s *Sandbox) BuildExecArgs(path string, args []string) []string {
 	execArgs := []string{s.path}
 
 	for _, f := range s.files {
@@ -138,14 +154,11 @@ func (s *Sandbox) CommandContext(ctx context.Context, path string, args ...strin
 		execArgs = append(execArgs, "--save_usage_stat", s.saveUsageStat)
 	}
 
-	execArgs = append(execArgs, "--", path)
-	execArgs = append(execArgs, args...)
-
-	log.Print(SandboxElf, execArgs)
-
-	if ctx == nil {
-		return exec.Command(SandboxElf, execArgs...)
+	if s.execDir != "" {
+		execArgs = append(execArgs, "--exec_dir", s.execDir)
 	}
 
-	return exec.CommandContext(ctx, SandboxElf, execArgs...)
+	execArgs = append(execArgs, "--", path)
+	execArgs = append(execArgs, args...)
+	return execArgs
 }
