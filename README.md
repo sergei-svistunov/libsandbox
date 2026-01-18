@@ -1,0 +1,1 @@
+# The repo was moved into https://github.com/Highload-fun/libsandbox.
